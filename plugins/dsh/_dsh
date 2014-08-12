@@ -1,0 +1,31 @@
+#compdef dsh dtcsh
+
+_arguments \
+  '*'{-h,--help}'[Give out help message]' \
+  '*'{-v,--verbose}'[Verbose output]' \
+  '*'{-q,--quiet}'[Be quiet]' \
+  '*'{-M,--show-machine-names}'[Prepend the host name on output]' \
+  '*'{-H,--hide-machine-names}'[Do not prepend host name on output]' \
+  '*'{-i,--duplicate-input}'[Duplicate input given to dsh]' \
+  '*'{-b,--bufsize}'[Change buffer size used in input duplication]:' \
+  '*'{-m,--machine}'[Execute on machine]: :_files' \
+  '*'{-x,--exclude}'[Exclude machine from machine list]: :_files' \
+  '*'{-n,--num-topology}'[How to divide the machines]' \
+  '*'{-a,--all}'[Execute on all machines]' \
+  '*'{-g,--group}'[Execute on group dsa]:group name:_files -W /etc/dsh/group ~/.dsh/group' \
+  '*'{-f,--file}'[Use the file as list of machines]: :_files' \
+  '*'{-r,--remoteshell}'[Execute using shell (rsh/ssh)]:shell:((rsh ssh))' \
+  '*'{-o,--remoteshellopt}'[Option to give to shell]:option' \
+  '*'{-w,--wait-shell}'[Sequentially execute shell]' \
+  '*'{-c,--concurrent-shell}'[Execute shell concurrently'] \
+  '*'{-F,--forklimit}'[Concurrent with limit on number]:number' \
+  '*'{-V,--version}'[Give out version information]'
+
+
+# Local variables:
+# mode: Shell-Script
+# sh-indentation: 2
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 ts=2 et
