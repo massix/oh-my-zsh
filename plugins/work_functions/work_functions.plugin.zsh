@@ -6,6 +6,7 @@ NOCOMPILPATH=${PATH}
 AGENT_ENV=${HOME}/.ssh/environment
 export LOGGER_BIN=$(which logger)
 
+
 ## Activate the compilation path
 function activate_compilation_path() 
 {
@@ -173,9 +174,11 @@ function activate_ke_path()
 ## Prepare a development environment
 function prepare_dev()
 {
-  local REPOS_TO_CLONE=(ke-common)
-  local REPOS_DEFAULT=(ke-kemake ke-opinel)
+  local -a REPOS_DEFAULT
+  local -a REPOS_TO_CLONE
   local BRANCH_NAME
+  REPOS_TO_CLONE=(ke-common)
+  REPOS_DEFAULT=(ke-kemake ke-opinel)
 
 	if [[ "x$1" == "x--help" || "x$1" == "x-h" ]]; then
 		echo "$0 <branch_name> <repo1> [repo2 ... repon]"
@@ -224,19 +227,23 @@ function prepare_dev()
 ## Clean a given branch on the remote MEL
 function clean_branch()
 {
-  local REPOS_TO_CLONE=(ke-common ke-kemake)
-	BRANCH_NAME=$1
+  local -a REPOS_TO_CLONE
+  
+  REPOS_TO_CLONE=(ke-common ke-kemake)
+	local BRANCH_NAME=$1
 	shift
 
+  [[ "x${BRANCH_NAME}" == "x" ]] && echo "You must provide a branch name" && return 127
+
 	for i; do
-		echo "bzr remove-branch mel:${USER}/${i}/${BRANCH_NAME}"
+		echo bzr remove-branch mel:${i}/${USER}/${BRANCH_NAME}
 	done
 
 	for repo in ${REPOS_TO_CLONE}; do
-		echo "bzr remove-branch mel:${USER}/${repo}/${BRANCH_NAME}"
+		echo bzr remove-branch mel:${repo}/${USER}/${BRANCH_NAME}
   done
 
-	unset REPOS_TO_CLONE
+  echo rm -fr ~/dev/${BRANCH_NAME}
 }
 
 ## Switch to the .release folder
@@ -270,8 +277,190 @@ function start_agent()
   fi
 }
 
+function create_bundles()
+{
+  [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
+
+  for i; do
+    cd ${PROJECT_ROOT}/${i}
+    bzr bundle mel:${i} . > ${PROJECT_ROOT}/${i}-bundle.diff
+    cd - > /dev/null
+  done
+}
+
+function project_info()
+{
+  local STATUS folders
+  [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
+  echo "Project path    : ${PROJECT_ROOT}"
+  echo "Branch  name    : ${BRANCH_NAME}"
+  echo
+
+  cd ${PROJECT_ROOT}
+  
+
+  #trunc="${(l:10:: :)${string[1,10]}}"
+  ## Get status of subcomponents
+  for folders in $(find . -maxdepth 1 -type d -iname "ke-*"); do
+    cd ${folders}
+    STATUS="clean"
+    [[ -n `bzr status` ]] && STATUS="dirty"
+    echo "${(r:15:: :)${folders[1,20]}} : ${STATUS}"
+    cd - > /dev/null
+  done
+
+  cd - > /dev/null
+}
+
+## Wrapper around all the functions
+function k() {
+  local command param firstparam secondparam thirdparam
+
+  command="$1"
+  param="$2"
+
+  firstparam="$3"
+  secondparam="$4"
+  thirdparam="$5"
+  
+
+  [[ "x${command}" == "x" ]] && _k_usage && return 127
+
+  if [[ "x${command}" != "xr" ]] && [[ "x${command}" != "xroot" ]] && [[ "x${command}" != "xi" ]] && [[ "x${command}" != "xinfo" ]]; then
+    [[ "x${param}" == "x" ]] && _k_usage && return 127
+  fi
+
+  case ${command} in
+    compilation_path|cp)
+      case ${param} in
+        (activate)
+          activate_compilation_path
+          ;;
+        (deactivate)
+          deactivate_compilation_path
+          ;;
+      esac
+      ;;
+    proj|p)
+      proj ${param}
+      ;;
+    bootstrap|bs)
+      bootstrap_component ${param}
+      ;;
+    ctags|ct)
+      generate_clang_tags_for_project ${param}
+      ;;
+    prepare_dev|dev)
+      shift
+      prepare_dev $@
+      ;;
+    clean_branch|cb)
+      shift
+      clean_branch $@
+      ;;
+    create_bundles|bun)
+      shift
+      create_bundles $@
+      ;;
+    root|r)
+      cd ${PROJECT_ROOT}
+      ;;
+    info|i)
+      project_info
+      ;;
+    subproject|sp)
+      cd ${PROJECT_ROOT}/${param}
+      ;;
+  esac
+}
+
+_k_usage() {
+  echo "KE Projects Wrapper for ZSH"
+  echo "usage: k <command> [subcommand] : following is a list of commands"
+  echo "   cp | compilation_path (activate/deactivate)  : (de)activate compilation path"
+  echo "    p | proj <project_name>                     : Switch to given project"
+  echo "   bs | bootstrap <branch_name>                 : Bootstrap current folder"
+  echo "   ct | ctags <project>                         : Generate clang-tags for project"
+  echo "  dev | prepare_dev <branch-name> [repos]       : Prepare development environment"
+  echo "   cb | clean_branch <branch-name> [repos]      : Clean a given branch (gives commands)"
+  echo "  bun | create_bundles [repos]                  : Create bundles for given repos"
+  echo "    r | root                                    : Goes to project's root"
+  echo "    i | info                                    : Prints informations on project"
+  echo "   sp | subproject <subproject>                 : Quickly switch to a subproject"
+}
 
 ## COMPLETION FUNCTIONS
+
+_k()
+{
+  typeset -A opt_args
+
+  _arguments -C \
+    '1:command:->cmds' \
+    '2:subcommand:->scmds' \
+    '*:: :->args'
+
+  case $state in
+    cmds)
+      local -a commands
+      commands=(
+        {compilation_path,cp}':Compilation path enable or disable'
+        {proj,p}':Switch to given project'
+        {bootstrap,bs}':Bootstrap current folder'
+        {ctags,ct}':Generate clang tags for given component'
+        {prepare_dev,pd}':Preparate development environment'
+        {clean_branch,cb}':Give commands to clean a branch'
+        {create_bundles,bun}':Create bundles for given repos'
+        {root,r}':Goes to project root'
+        {info,i}':Gives informations on project'
+        {subproject,sp}':Quickly switch to a subproject'
+      )
+
+      _describe -t commands 'command' commands && ret=0
+    ;;
+    scmds)
+      case $line[1] in
+        compilation_path|cp)
+          integer NORMARG
+          _arguments -C -n \
+            '2:Activates or deactivates the compilation path:(activate deactivate)'
+        ;;
+        proj|p)
+          _arguments '2:project name:_files -W ~/dev -/'
+        ;;
+        bootstrap|bs)
+          _arguments '2:branch name:(${BRANCH_NAME})'
+        ;;
+        ctags|ct)
+          _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
+        ;;
+        prepare_dev|pd)
+          _arguments '2:branch name:'
+        ;;
+        clean_branch|cb)
+          _arguments '2:branch name:$(${BRANCH_NAME})'
+        ;;
+      create_bundles|bun)
+          _arguments '*:repos:_files -W ${PROJECT_ROOT} -/'
+        ;;
+      subproject|sp)
+          _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
+      ;;
+      esac
+    ;;
+    args)
+      case $line[1] in
+        prepare_dev|pd|clean_branch|cb)
+          _arguments '*:repos to clone:(ke-indexation ke-crawl ke-search)'
+          ;;
+      create_bundles|bun)
+          _arguments '*:repos:_files -W ${PROJECT_ROOT} -/'
+        ;;
+      esac
+    ;;
+  esac
+}
+
 
 _bootstrap_component()
 {
@@ -281,6 +470,7 @@ _bootstrap_component()
 _proj()
 {
   _arguments '1:project name:->projects'
+
   case $state in
     projects)
       _files -W ~/dev -/
@@ -295,12 +485,12 @@ _generate_clang_tags_for_project()
 
 _start_agent()
 {
-  _arguments '1:force:(force):'
+  _arguments '1:force:(force)'
 }
 
 _prepare_dev()
 {
-  _arguments '1: :' '*: :(ke-indexation ke-crawl ke-search)'
+  _arguments '1:branch name:' '*:repos to clone:(ke-indexation ke-crawl ke-search)'
 }
 
 
@@ -311,4 +501,5 @@ compdef _proj proj
 compdef _generate_clang_tags_for_project generate_clang_tags_for_project
 compdef _start_agent start_agent
 compdef _prepare_dev prepare_dev
+compdef _k k
 
