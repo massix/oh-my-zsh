@@ -377,6 +377,7 @@ function k() {
 _k_usage() {
   echo "KE Projects Wrapper for ZSH"
   echo "usage: k <command> [subcommand] : following is a list of commands"
+  echo "    h | help                                    : Print this help"
   echo "   cp | compilation_path (activate/deactivate)  : (de)activate compilation path"
   echo "    p | proj <project_name>                     : Switch to given project"
   echo "   bs | bootstrap <branch_name>                 : Bootstrap current folder"
@@ -413,6 +414,7 @@ _k()
         {create_bundles,bun}':Create bundles for given repos'
         {root,r}':Goes to project root'
         {info,i}':Gives informations on project'
+        {help,h}':Print help'
         {subproject,sp}':Quickly switch to a subproject'
       )
 
