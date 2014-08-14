@@ -282,9 +282,9 @@ function create_bundles()
   [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
 
   for i; do
-    cd ${PROJECT_ROOT}/${i}
+    pushd -q ${PROJECT_ROOT}/${i}
     bzr bundle mel:${i} . > ${PROJECT_ROOT}/${i}-bundle.diff
-    cd - > /dev/null
+    popd -q
   done
 }
 
@@ -296,25 +296,43 @@ function project_info()
   echo "Branch  name    : ${BRANCH_NAME}"
   echo
 
-  cd ${PROJECT_ROOT}
-  
+  pushd -q $(pwd)  
+  pushd -q ${PROJECT_ROOT}
 
-  #trunc="${(l:10:: :)${string[1,10]}}"
+
   ## Get status of subcomponents
   for folders in $(find . -maxdepth 1 -type d -iname "ke-*"); do
-    cd ${folders}
+    pushd -q ${folders}
     STATUS="clean"
     [[ -n `bzr status` ]] && STATUS="dirty"
     echo "${(r:15:: :)${folders[1,20]}} : ${STATUS}"
-    cd - > /dev/null
+    popd -q
   done
 
-  cd - > /dev/null
+  popd -q
+}
+
+function diff_project()
+{
+  local diff_command="diff"
+  [[ "x$1" == "xcolor" ]] && diff_command="cdiff"
+  [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
+
+  pushd -q $PROJECT_ROOT
+  for folders in $(find . -maxdepth 1 -type d -iname "ke-*"); do
+    pushd -q ${folders}
+    [[ -n `bzr status` ]] && bzr ${diff_command}
+    popd -q
+  done
+
+  popd -q
 }
 
 ## Wrapper around all the functions
 function k() {
   local command param firstparam secondparam thirdparam
+  local -a singles
+  singles=(xr xroot xd xdiff xi xinfo)
 
   command="$1"
   param="$2"
@@ -323,12 +341,11 @@ function k() {
   secondparam="$4"
   thirdparam="$5"
   
-
   [[ "x${command}" == "x" ]] && _k_usage && return 127
 
-  if [[ "x${command}" != "xr" ]] && [[ "x${command}" != "xroot" ]] && [[ "x${command}" != "xi" ]] && [[ "x${command}" != "xinfo" ]]; then
-    [[ "x${param}" == "x" ]] && _k_usage && return 127
-  fi
+
+  ## The parameters defined in ${singles} don't have a mandatory option
+  [[ "${singles[(i)x${command}]}" -gt ${#singles} ]] && [[ "x${param}" == "x" ]] && _k_usage && return 127
 
   case ${command} in
     compilation_path|cp)
@@ -371,6 +388,9 @@ function k() {
     subproject|sp)
       cd ${PROJECT_ROOT}/${param}
       ;;
+    diff|d)
+      diff_project ${param}
+      ;;
   esac
 }
 
@@ -388,6 +408,7 @@ _k_usage() {
   echo "    r | root                                    : Goes to project's root"
   echo "    i | info                                    : Prints informations on project"
   echo "   sp | subproject <subproject>                 : Quickly switch to a subproject"
+  echo "    d | diff [color]                            : Run a bzr (c)diff on all subprojects"
 }
 
 ## COMPLETION FUNCTIONS
@@ -416,6 +437,7 @@ _k()
         {info,i}':Gives informations on project'
         {help,h}':Print help'
         {subproject,sp}':Quickly switch to a subproject'
+        {diff,d}':Run a bzr (c)diff on all subprojects'
       )
 
       _describe -t commands 'command' commands && ret=0
@@ -447,6 +469,9 @@ _k()
         ;;
       subproject|sp)
           _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
+      ;;
+      diff|d)
+        _arguments '2:color:(color)'
       ;;
       esac
     ;;
