@@ -4,7 +4,49 @@ COMPILPATHACTIVE=0
 ENVIRONMENT_FILE=${HOME}/bin/var_env_toolchain.sh
 NOCOMPILPATH=${PATH}
 AGENT_ENV=${HOME}/.ssh/environment
+OPINEL_ENV=
 export LOGGER_BIN=$(which logger)
+
+## Ok this is not really *THAT* helpful
+function infinite_fortune()
+{
+  local prev_fortune next_fortune r
+  local reload
+  next_fortune=$(fortune $@)
+  prev_fortune=$next_fortune
+
+  reload=1
+  while true; do
+    unset r
+    clear
+    if [[ $reload -eq 2 ]]; then 
+      prev_fortune=$next_fortune
+      next_fortune=$(fortune $@)
+      echo $next_fortune
+    elif [[ $reload -eq 1 ]]; then
+      echo $next_fortune
+      reload=2
+    else
+      echo $prev_fortune
+      reload=1
+    fi
+
+    read -q -t60 r
+    case $r in
+      q)
+        break
+        ;;
+      p)
+        reload=0
+        ;;
+      c)
+        clear   # Panic mode, boss incoming.
+        htop
+        reload=0
+        ;;
+    esac
+  done
+}
 
 
 ## Activate the compilation path
@@ -290,10 +332,12 @@ function create_bundles()
 
 function project_info()
 {
+  set_opinel_environment
   local STATUS folders
   [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
   echo "Project path    : ${PROJECT_ROOT}"
   echo "Branch  name    : ${BRANCH_NAME}"
+  echo "Opinel schroot  : ${OPINEL_ENV}"
   echo
 
   pushd -q $(pwd)  
@@ -326,6 +370,45 @@ function diff_project()
   done
 
   popd -q
+}
+
+function set_opinel_environment()
+{
+  local opienv_file=${PROJECT_ROOT}/ke-search/.bzr/opinel_env
+  [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
+  if [[ "x$1" == "x" ]]; then
+    if [[ -e ${opienv_file} ]]; then
+      OPINEL_ENV=$(cat ${opienv_file})
+    fi
+  else
+    OPINEL_ENV=$1
+    echo ${OPINEL_ENV} > ${opienv_file}
+  fi
+}
+
+function opinel_wrapper()
+{
+  set_opinel_environment || return 127
+  [[ "x${OPINEL_ENV}" == "x" ]] && echo "Couldn't guess opinel environment" && return 127
+
+  if [[ -d ${PROJECT_ROOT}/ke-opinel ]]; then
+    ${PROJECT_ROOT}/ke-opinel/src/opinel --env=${OPINEL_ENV} $@
+  fi
+}
+
+function compile_component()
+{
+  [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
+  if [[ -d ${PROJECT_ROOT}/$1 ]]; then
+    pushd -q ${PROJECT_ROOT}/$1
+    sw_release
+    if [[ "x${OPINEL_ENV}" != "x" ]]; then
+      make && make deb-main-deploy
+    else
+      make
+    fi
+    popd -q
+  fi
 }
 
 ## Wrapper around all the functions
@@ -391,6 +474,16 @@ function k() {
     diff|d)
       diff_project ${param}
       ;;
+    env|e)
+      set_opinel_environment ${param}
+      ;;
+    opinel|o)
+      shift
+      opinel_wrapper $@
+      ;;
+    compile|cc)
+      compile_component ${param}
+      ;;
   esac
 }
 
@@ -409,6 +502,9 @@ _k_usage() {
   echo "    i | info                                    : Prints informations on project"
   echo "   sp | subproject <subproject>                 : Quickly switch to a subproject"
   echo "    d | diff [color]                            : Run a bzr (c)diff on all subprojects"
+  echo "    e | env <opinel_env>                        : Set opinel environment"
+  echo "    o | opinel [opinel commands]                : Opinel wrapper with --env= set"
+  echo "   cc | compile <component>                     : Compiles the given component"
 }
 
 ## COMPLETION FUNCTIONS
@@ -438,6 +534,9 @@ _k()
         {help,h}':Print help'
         {subproject,sp}':Quickly switch to a subproject'
         {diff,d}':Run a bzr (c)diff on all subprojects'
+        {env,e}':Set opinel environment'
+        {opinel,o}':Opinel wrapper with --env= set'
+        {compile,cc}':Compiles the given component'
       )
 
       _describe -t commands 'command' commands && ret=0
@@ -472,6 +571,9 @@ _k()
       ;;
       diff|d)
         _arguments '2:color:(color)'
+      ;;
+      compile|cc)
+        _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
       ;;
       esac
     ;;
