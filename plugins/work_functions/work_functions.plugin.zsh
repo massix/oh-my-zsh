@@ -429,20 +429,28 @@ function deploy_component()
   for i; do
     binaries+=$i
     binaries_basename+=$(basename $i)
-    remote_ports+=$remote_port_start
-
-    (( remote_port_start = remote_port_start + 1 ))
   done
 
   for m in ${(P)${machines_array}}; do
-    echo "Targetting machine ${m}"
+    echo "Targetting machine $fg_bold[blue]${m}$reset_color"
     local i=1
     for b in ${binaries}; do
-      echo "Deploying ${b} to $m:${remote_ports[$i]}"
-      ssh $m -- "nc -l ${remote_ports[$i]} > /ke/bin/${binaries_basename[$i]} & "
-      nc $m ${remote_ports[$i]} < $b
+      echo -n "  Deploying ${(r:70:: :)${b[1,70]}} "
+      ssh $m "nc -d -l $remote_port_start > /ke/bin/${binaries_basename[$i]} &"
+      cat $b | nc $m $remote_port_start
+      local md5sum_local=$(md5sum $b | awk '{print $1}')
+      local md5sum_remote=$(ssh $m "md5sum /ke/bin/${binaries_basename[$i]}" | awk '{print $1}')
+
+      if [[ $md5sum_local != $md5sum_remote ]]; then
+        echo "[$fg_bold[red]KO$reset_color]"
+        echo -e "local  md5sum: $fg_bold[red]${md5sum_local}$reset_color\nremote md5sum: $fg_bold[red]${md5sum_remote}$reset_color\n"
+        return 127
+      else
+        echo "[$fg_bold[green]OK$reset_color]"
+      fi
       (( i = i + 1 ))
     done
+    echo "-----> everything done for machine $fg_bold[blue]${m}$reset_color"
     echo
   done
 
