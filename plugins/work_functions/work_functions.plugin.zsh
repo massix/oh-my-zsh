@@ -419,7 +419,6 @@ function deploy_component()
 {
   local -a machines_array
   local -a binaries binaries_basename remote_ports
-  local remote_port_start=9100
   machines_array=$1
   shift
 
