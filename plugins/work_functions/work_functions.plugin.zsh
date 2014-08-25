@@ -436,8 +436,7 @@ function deploy_component()
     local i=1
     for b in ${binaries}; do
       echo -n "  Deploying ${(r:70:: :)${b[1,70]}} "
-      ssh $m "nc -d -l $remote_port_start > /ke/bin/${binaries_basename[$i]} &"
-      cat $b | nc $m $remote_port_start
+      cat $b | ssh $m "cat - > /ke/bin/${binaries_basename[$i]}"
       local md5sum_local=$(md5sum $b | awk '{print $1}')
       local md5sum_remote=$(ssh $m "md5sum /ke/bin/${binaries_basename[$i]}" | awk '{print $1}')
 
