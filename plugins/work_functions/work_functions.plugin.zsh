@@ -411,6 +411,43 @@ function compile_component()
   fi
 }
 
+local -a atlas indexer
+atlas=(atlas001.conso.qualif.bloc01.ke.p.fti.net atlas002.conso.qualif.bloc01.ke.p.fti.net)
+indexer=(indexer001.search.qualif.bloc01.ke.p.fti.net)
+
+function deploy_component()
+{
+  local -a machines_array
+  local -a binaries binaries_basename remote_ports
+  local remote_port_start=9100
+  machines_array=$1
+  shift
+
+  binaries=()
+  binaries_basename=()
+
+  for i; do
+    binaries+=$i
+    binaries_basename+=$(basename $i)
+    remote_ports+=$remote_port_start
+
+    (( remote_port_start = remote_port_start + 1 ))
+  done
+
+  for m in ${(P)${machines_array}}; do
+    echo "Targetting machine ${m}"
+    local i=1
+    for b in ${binaries}; do
+      echo "Deploying ${b} to $m:${remote_ports[$i]}"
+      ssh $m -- "nc -l ${remote_ports[$i]} > /ke/bin/${binaries_basename[$i]} & "
+      nc $m ${remote_ports[$i]} < $b
+      (( i = i + 1 ))
+    done
+    echo
+  done
+
+}
+
 ## Wrapper around all the functions
 function k() {
   local command param firstparam secondparam thirdparam
@@ -484,27 +521,37 @@ function k() {
     compile|cc)
       compile_component ${param}
       ;;
+    atlas|ats)
+      shift
+      deploy_component atlas $@
+      ;;
+    indexer|idx)
+      shift
+      deploy_component indexer $@
+      ;;
   esac
 }
 
 _k_usage() {
   echo "KE Projects Wrapper for ZSH"
   echo "usage: k <command> [subcommand] : following is a list of commands"
-  echo "    h | help                                    : Print this help"
-  echo "   cp | compilation_path (activate/deactivate)  : (de)activate compilation path"
-  echo "    p | proj <project_name>                     : Switch to given project"
-  echo "   bs | bootstrap <branch_name>                 : Bootstrap current folder"
-  echo "   ct | ctags <project>                         : Generate clang-tags for project"
-  echo "  dev | prepare_dev <branch-name> [repos]       : Prepare development environment"
-  echo "   cb | clean_branch <branch-name> [repos]      : Clean a given branch (gives commands)"
-  echo "  bun | create_bundles [repos]                  : Create bundles for given repos"
-  echo "    r | root                                    : Goes to project's root"
-  echo "    i | info                                    : Prints informations on project"
-  echo "   sp | subproject <subproject>                 : Quickly switch to a subproject"
-  echo "    d | diff [color]                            : Run a bzr (c)diff on all subprojects"
-  echo "    e | env <opinel_env>                        : Set opinel environment"
-  echo "    o | opinel [opinel commands]                : Opinel wrapper with --env= set"
-  echo "   cc | compile <component>                     : Compiles the given component"
+  echo "    h | help                                      Print this help"
+  echo "   cp | compilation_path (activate/deactivate)    (de)activate compilation path"
+  echo "    p | proj <project_name>                       Switch to given project"
+  echo "   bs | bootstrap <branch_name>                   Bootstrap current folder"
+  echo "   ct | ctags <project>                           Generate clang-tags for project"
+  echo "  dev | prepare_dev <branch-name> [repos]         Prepare development environment"
+  echo "   cb | clean_branch <branch-name> [repos]        Clean a given branch (gives commands)"
+  echo "  bun | create_bundles [repos]                    Create bundles for given repos"
+  echo "    r | root                                      Goes to project's root"
+  echo "    i | info                                      Prints informations on project"
+  echo "   sp | subproject <subproject>                   Quickly switch to a subproject"
+  echo "    d | diff [color]                              Run a bzr (c)diff on all subprojects"
+  echo "    e | env <opinel_env>                          Set opinel environment"
+  echo "    o | opinel [opinel commands]                  Opinel wrapper with --env= set"
+  echo "   cc | compile <component>                       Compiles the given component"
+  echo "  ats | atlas <binaries>                          Deploy binaries to atlas machines"
+  echo "  idx | indexer <binaries>                        Deploy binaries to index machines"
 }
 
 ## COMPLETION FUNCTIONS
@@ -537,6 +584,8 @@ _k()
         {env,e}':Set opinel environment'
         {opinel,o}':Opinel wrapper with --env= set'
         {compile,cc}':Compiles the given component'
+        {atlas,ats}':Deploy binaries to atlas machines'
+        {indexer,idx}':Deploy binaries to index machines'
       )
 
       _describe -t commands 'command' commands && ret=0
@@ -575,6 +624,9 @@ _k()
       compile|cc)
         _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
       ;;
+      atlas|ats|indexer|idx)
+        _arguments '2:binary:_files'
+        ;;
       esac
     ;;
     args)
@@ -584,6 +636,9 @@ _k()
           ;;
       create_bundles|bun)
           _arguments '*:repos:_files -W ${PROJECT_ROOT} -/'
+        ;;
+      atlas|ats|indexer|idx)
+        _arguments '*:binary:_files'
         ;;
       esac
     ;;
