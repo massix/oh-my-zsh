@@ -322,26 +322,29 @@ function start_agent()
 function create_bundles()
 {
   [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
+  local old_pwd=$(pwd)
 
   for i; do
     pushd -q ${PROJECT_ROOT}/${i}
     bzr bundle mel:${i} . > ${PROJECT_ROOT}/${i}-bundle.diff
     popd -q
   done
+
+  cd ${old_pwd}
 }
 
 function project_info()
 {
   set_opinel_environment
   local STATUS folders
+  local old_pwd=$(pwd)
   [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
   echo "Project path    : ${PROJECT_ROOT}"
   echo "Branch  name    : ${BRANCH_NAME}"
   echo "Opinel schroot  : ${OPINEL_ENV}"
   echo
 
-  pushd -q $(pwd)  
-  pushd -q ${PROJECT_ROOT}
+  cd ${PROJECT_ROOT}
 
 
   ## Get status of subcomponents
@@ -353,7 +356,7 @@ function project_info()
     popd -q
   done
 
-  popd -q
+  cd ${old_pwd}
 }
 
 function diff_project()
@@ -361,15 +364,16 @@ function diff_project()
   local diff_command="diff"
   [[ "x$1" == "xcolor" ]] && diff_command="cdiff"
   [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
+  local old_pwd=$(pwd)
 
-  pushd -q $PROJECT_ROOT
+  cd ${PROJECT_ROOT}
   for folders in $(find . -maxdepth 1 -type d -iname "ke-*"); do
     pushd -q ${folders}
     [[ -n `bzr status` ]] && bzr ${diff_command}
     popd -q
   done
 
-  popd -q
+  cd ${old_pwd}
 }
 
 function set_opinel_environment()
@@ -398,17 +402,18 @@ function opinel_wrapper()
 
 function compile_component()
 {
+  local old_pwd=$(pwd)
   [[ "x${PROJECT_ROOT}" == "x" ]] && echo "PROJECT_ROOT is not set" && return 127
   if [[ -d ${PROJECT_ROOT}/$1 ]]; then
-    pushd -q ${PROJECT_ROOT}/$1
+    cd ${PROJECT_ROOT}/$1
     sw_release
     if [[ "x${OPINEL_ENV}" != "x" ]]; then
       make && make deb-main-deploy
     else
       make
     fi
-    popd -q
   fi
+  cd ${old_pwd}
 }
 
 local -a atlas indexer
