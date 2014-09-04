@@ -409,6 +409,7 @@ function compile_component()
     sw_release
     if [[ "x${OPINEL_ENV}" != "x" ]]; then
       make && make deb-main-deploy
+      make check
     else
       make
     fi
