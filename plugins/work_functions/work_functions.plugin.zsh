@@ -7,6 +7,16 @@ AGENT_ENV=${HOME}/.ssh/environment
 OPINEL_ENV=
 export LOGGER_BIN=$(which logger)
 
+function naughty_notifier()
+{
+  local text=$1
+  if which awesome-client > /dev/null; then
+    if pgrep awesome > /dev/null; then
+      echo "naughty.notify({ text = \"$text\" })" | $(which awesome-client)
+    fi
+  fi
+}
+
 ## Ok this is not really *THAT* helpful
 function infinite_fortune()
 {
@@ -114,6 +124,8 @@ function bootstrap_component()
   source ${CLANG_TAGS}
   export CLANG_TAGS_BIN=$(which clang-tags)
   export PROJECT_ROOT=${PARENT}
+
+  naughty_notifier "Bootstrapped ${BRANCH_NAME}:${PARENT}"
 }
 
 ## Directly switch to a given project
@@ -194,6 +206,8 @@ function generate_clang_tags_for_project()
 
   cp ${HOME}/bin/ycm_template.py "${PAR1}/${COMPONENT_NAME}/.ycm_extra_conf.py"
   sed -i "s/\$TOBESET/${ESCAPED_FOLDER}/" ${PAR1}/${COMPONENT_NAME}/.ycm_extra_conf.py
+
+  naughty_notifier "Tags for ${BRANCH_NAME}:${COMPONENT_NAME} created successfully"
 }
 
 ## Activate the KE PATH
@@ -258,6 +272,8 @@ function prepare_dev()
   for repo in ${REPOS_DEFAULT}; do
     bzr branch mel:${repo}
   done
+
+  naughty_notifier "Everything is ready for ${BRANCH_NAME}"
 }
 
 ## Clean a given branch on the remote MEL
@@ -409,11 +425,14 @@ function compile_component()
     fi
   fi
   cd ${old_pwd}
+
+  naughty_notifier "Compilation over for ${1}"
 }
 
-local -a atlas indexer
-atlas=(atlas001.conso.qualif.bloc01.ke.p.fti.net atlas002.conso.qualif.bloc01.ke.p.fti.net)
-indexer=(indexer001.search.qualif.bloc01.ke.p.fti.net)
+local -a atlas indexer machines
+atlas_conso_qualif=(atlas001.conso.qualif.bloc01.ke.p.fti.net atlas002.conso.qualif.bloc01.ke.p.fti.net)
+indexer_conso_qualif=(indexer001.search.qualif.bloc01.ke.p.fti.net)
+machines=(atlas_conso_qualif indexer_conso_qualif)
 
 function deploy_component()
 {
@@ -452,24 +471,25 @@ function deploy_component()
     echo
   done
 
+  naughty_notifier "Deployment of binaries is over"
 }
 
 function ke_prompt_info_cp() {
   if [[ $COMPILPATHACTIVE -eq 1 ]]; then
-    echo "${ZSH_THEME_KE_PROMPT_PREFIX}${fg[red]}cp${ZSH_THEME_KE_PROMPT_SUFFIX} "
+    echo "$ZSH_THEME_KE_PROMPT_PREFIX%{$fg[red]%}cp$ZSH_THEME_KE_PROMPT_SUFFIX "
   fi
 }
 
 function ke_prompt_info_branch() {
   if [[ "x${BRANCH_NAME}" != "x" ]]; then
-    echo "${ZSH_THEME_KE_PROMPT_PREFIX}${fg[red]}${BRANCH_NAME}${ZSH_THEME_KE_PROMPT_SUFFIX} "
+    echo "$ZSH_THEME_KE_PROMPT_PREFIX%{$fg[red]%}$BRANCH_NAME$ZSH_THEME_KE_PROMPT_SUFFIX "
   fi
 }
 
 function ke_prompt_info_opinel() {
   local opinel_file=${PROJECT_ROOT}/ke-search/.bzr/opinel_env
   if [[ -f ${opinel_file} ]]; then
-    echo "${ZSH_THEME_KE_OPI_PROMPT_PREFIX}${fg[red]}$(cat $opinel_file)${ZSH_THEME_KE_OPI_PROMPT_SUFFIX} "
+    echo "$ZSH_THEME_KE_OPI_PROMPT_PREFIX%{$fg[red]%}$(cat $opinel_file)$ZSH_THEME_KE_OPI_PROMPT_SUFFIX "
   fi
 }
 
@@ -546,13 +566,10 @@ function k() {
     compile|cc)
       compile_component ${param}
       ;;
-    atlas|ats)
+    deploy|dc)
       shift
-      deploy_component atlas $@
-      ;;
-    indexer|idx)
       shift
-      deploy_component indexer $@
+      deploy_component ${param} $@
       ;;
   esac
 }
@@ -575,8 +592,7 @@ _k_usage() {
   echo "    e | env <opinel_env>                          Set opinel environment"
   echo "    o | opinel [opinel commands]                  Opinel wrapper with --env= set"
   echo "   cc | compile <component>                       Compiles the given component"
-  echo "  ats | atlas <binaries>                          Deploy binaries to atlas machines"
-  echo "  idx | indexer <binaries>                        Deploy binaries to index machines"
+  echo "   dc | deploy <machines> <binaries..>            Deploy binaries to given machines"
 }
 
 ## COMPLETION FUNCTIONS
@@ -609,8 +625,7 @@ _k()
         {env,e}':Set opinel environment'
         {opinel,o}':Opinel wrapper with --env= set'
         {compile,cc}':Compiles the given component'
-        {atlas,ats}':Deploy binaries to atlas machines'
-        {indexer,idx}':Deploy binaries to index machines'
+        {deploy,dc}':Deploy binaries to given machines'
       )
 
       _describe -t commands 'command' commands && ret=0
@@ -649,6 +664,9 @@ _k()
       compile|cc)
         _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
       ;;
+      deploy|dc)
+        _arguments '2:machines:($machines)'
+      ;;
       atlas|ats|indexer|idx)
         _arguments '2:binary:_files'
         ;;
@@ -662,7 +680,7 @@ _k()
       create_bundles|bun)
           _arguments '*:repos:_files -W ${PROJECT_ROOT} -/'
         ;;
-      atlas|ats|indexer|idx)
+      atlas|ats|indexer|idx|deploy|dc)
         _arguments '*:binary:_files'
         ;;
       esac
