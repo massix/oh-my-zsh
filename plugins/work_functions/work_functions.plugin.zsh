@@ -418,10 +418,10 @@ function compile_component()
     cd ${PROJECT_ROOT}/$1
     sw_release
     if [[ "x${OPINEL_ENV}" != "x" ]]; then
-      make && make deb-main-deploy
-      make check
+      make --silent && make --silent deb-main-deploy
+      make --silent check
     else
-      make
+      make --silent
     fi
   fi
   cd ${old_pwd}
