@@ -1,12 +1,19 @@
 #!/bin/zsh
 
-local tdl_command=~/bin/todo
+local tdl_command=${HOME}/bin/todo
+local tdl_config=${HOME}/.todorc
+local tdl_db=${HOME}/Dropbox/todo.bin
 
 function tdl() {
   local command=$1
 
   if ! test -x $tdl_command; then
     echo "install in ~/bin/todo"
+    return 127
+  fi
+
+  if ! test -e $tdl_config; then
+    echo "config file missing in $tdl_config"
     return 127
   fi
 
@@ -46,4 +53,3 @@ function tdl() {
   esac
 }
 
-tdl

@@ -12,7 +12,7 @@ function naughty_notifier()
   local text=$1
   if which awesome-client > /dev/null; then
     if pgrep awesome > /dev/null; then
-      echo "naughty.notify({ text = \"$text\" })" | $(which awesome-client)
+      echo "naughty.notify({ text = \"$text\", timeout = 10 })" | $(which awesome-client)
     fi
   fi
 }
