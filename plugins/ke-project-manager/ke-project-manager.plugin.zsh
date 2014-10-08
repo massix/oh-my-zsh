@@ -87,7 +87,7 @@ function ke_project_manager()
       __proj $1
       ;;
     bootstrap|bs)
-      __bootstrap_component $1 $2
+      __bootstrap_component $@
       ;;
     ctags|ct)
       __generate_clang_tags_for_project $1 $2

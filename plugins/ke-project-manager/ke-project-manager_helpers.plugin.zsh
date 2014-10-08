@@ -35,7 +35,7 @@ function __proj()
 function __bootstrap_component()
 {
   local given_branch="$1"
-  local debug_enabled="$2"
+  shift
 
   local grandparent common_include debug_flag
   local parent=$(dirname $PWD)
@@ -59,17 +59,12 @@ function __bootstrap_component()
     return
   fi
 
-  if test "x${debug_enabled}" = "xdebug"; then
-    debug_flag="--enable-debug"
-    echo "Debug activated (passing flag ${debug_flag})"
-  fi
-
   ke_project_manager compilation_path activate
 
   take .release
   grandparent=$(dirname $(dirname $PWD))
 
-  $(dirname $PWD)/configure --with-toolchain-dir=/ke/local/toolchain3-x86_64-nptl --with-kemake-dir=${grandparent}/ke-kemake --with-common-lib=${grandparent}/ke-common/.release --with-common-include=${grandparent}/ke-common ${debug_flag}
+  $(dirname $PWD)/configure --with-toolchain-dir=/ke/local/toolchain3-x86_64-nptl --with-kemake-dir=${grandparent}/ke-kemake --with-common-lib=${grandparent}/ke-common/.release --with-common-include=${grandparent}/ke-common $@
 
   common_include=$(cat Makefile | grep 'common_include' | cut -d ' ' -f 3)
 
