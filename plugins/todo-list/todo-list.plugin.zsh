@@ -1,55 +1,39 @@
 #!/bin/zsh
 
-local tdl_command=${HOME}/bin/todo
-local tdl_config=${HOME}/.todorc
+local tdl_command=$(which todo)
 local tdl_db=${HOME}/Dropbox/todo.bin
 
-function tdl() {
-  local command=$1
+local tdl_personal_db=${HOME}/Dropbox/personal.bin
+local tdl_work_db=${HOME}/Dropbox/work.bin
+local tdl_generic_db=${HOME}/Dropbox/todo.bin
 
-  if ! test -x $tdl_command; then
-    echo "install in ~/bin/todo"
-    return 127
+function personal_todo() {
+  local action=""
+  if [[ $1 == "" ]]; then
+    action="list"
   fi
 
-  if ! test -e $tdl_config; then
-    echo "config file missing in $tdl_config"
-    return 127
-  fi
-
-  if test -z $command; then
-    ~/bin/todo count
-    ~/bin/todo list
-    return 0
-  fi
-
-  shift
-
-  local params="$*"
-
-  case $command in
-    add|a) 
-      $tdl_command insert "${params}"
-      ;;
-    addbody|ab)
-      $tdl_command insert "$1" "$2"
-      ;;
-    del|d)
-      $tdl_command delete ${params}
-      ;;
-    modify|m)
-      local index=$1
-      shift
-      $tdl_command modify $index "$*"
-      ;;
-    modifybody|mb)
-      local index=$1
-      shift
-      $tdl_command modify $index "$1" "$2"
-      ;;
-    *)
-      echo "usage: $0 [add|addbody|del|modify|modifybody] <parameters>"
-      ;;
-  esac
+  $tdl_command $action $@ --tododb $tdl_personal_db
 }
 
+function work_todo() {
+  local action=""
+  if [[ $1 == "" ]]; then
+    action="list"
+  fi
+
+  $tdl_command $action $@ --tododb $tdl_work_db
+}
+
+function generic_todo() {
+  local action=""
+  if [[ $1 == "" ]]; then
+    action="list"
+  fi
+
+  $tdl_command $action $@ --tododb $tdl_generic_db
+}
+
+alias ptdl = personal_todo
+alias wtdl = work_todo
+alias tdl = generic_todo
