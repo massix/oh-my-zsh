@@ -12,7 +12,7 @@ export NOCOMPILPATH=${PATH}
 export OPINEL_ENV=
 
 # Bump this everytime we re-merge in master
-export KPM_VERSION="1.0.1"
+export KPM_VERSION="1.0.2"
 
 # Set this to where your projects are
 export REPOSITORY=${HOME}/dev
