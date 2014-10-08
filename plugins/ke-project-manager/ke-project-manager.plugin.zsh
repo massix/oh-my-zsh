@@ -72,11 +72,12 @@ function ke_project_manager()
   # These commands don't have any mandatory option
   singles=(r root d diff i info)
 
+  [[ -z "$1" ]] && __kpm_usage && return 127
+
   command="$1"
   shift
 
   # Verify if the information provided are correct
-  [[ -z "${command}" ]] && __kpm_usage && return 127
   [[ "${singles[(i)${command}]}" -gt ${#singles} ]] && [[ -z $1 ]] && __kpm_usage && return 127
 
   case ${command} in
