@@ -81,13 +81,12 @@ function __generate_clang_tags_for_project()
 {
   local start_dir=$(pwd)
   local release_dir clang_tags_bin escaped_folder make_ext
+  local bear_bin
 
   local first_level=''
   local second_level=''
-  local clang_tags_environment=${HOME}/dev/clang-tags/build/env.sh
   local incremental_build=0
 
-  source ${clang_tags_environment} 2> /dev/null
 
   if test "x$1" = "x" -o "x${PROJECT_ROOT}" = "x"; then
     echo "Missing project name (did you bootstrap_component the project?)"
@@ -127,9 +126,9 @@ function __generate_clang_tags_for_project()
     mv "$(pwd)/compile_commands.json" "$(pwd)/compile_commands.old.json"
   fi
 
-  local clang_tags_bin=$(which clang-tags)
+  bear_bin=${HOME}/env/Bear/bin/bear
   [[ ${incremental_build} -eq 0 ]] && make clean
-  ${clang_tags_bin} trace make ${make_ext}
+  LD_LIBRARY_PATH=${HOME}/env/libconfig/lib ${bear_bin} -- make ${make_ext}
 
   if test -e "$(pwd)/compile_commands.json"; then
     if ! test ${incremental_build} -eq 0; then
