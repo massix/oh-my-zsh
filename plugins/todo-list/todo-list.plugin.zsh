@@ -3,10 +3,10 @@
 local tdl_command=$(which hali)
 local tdl_db=${HOME}/Dropbox/todo.bin
 
-local tdl_personal_db=${HOME}/Dropbox/personal.bin
-local tdl_work_db=${HOME}/Dropbox/work.bin
-local tdl_generic_db=${HOME}/Dropbox/todo.bin
-local tdl_todo_list_db=${HOME}/Dropbox/todo-list.bin
+local tdl_personal_db=${HOME}/Dropbox/hali-lists/personal.bin
+local tdl_work_db=${HOME}/Dropbox/hali-lists/work.bin
+local tdl_generic_db=${HOME}/Dropbox/hali-lists/todo.bin
+local tdl_todo_list_db=${HOME}/Dropbox/hali-lists/todo-list.bin
 
 function personal_todo() {
   local action=""
