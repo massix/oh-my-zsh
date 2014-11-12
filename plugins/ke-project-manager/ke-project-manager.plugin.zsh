@@ -52,6 +52,7 @@ function __kpm_usage()
   echo "    p | proj <project_name>                       Switch to given project"
   echo "   bs | bootstrap <branch_name>                   Bootstrap current folder"
   echo "   ct | ctags <project> [nochecks]                Generate clang-tags for project"
+  echo "   cc | clang <project> [nochecks]                Generate clang-complete for project"
   echo "  dev | prepare_dev <branch-name> [repos]         Prepare development environment"
   echo "   cb | clean_branch <branch-name> [repos]        Clean a given branch (gives commands)"
   echo "  bun | create_bundles [repos]                    Create bundles for given repos"
@@ -92,6 +93,9 @@ function ke_project_manager()
       ;;
     ctags|ct)
       __generate_clang_tags_for_project $1 $2
+      ;;
+    clang|cc)
+        __generate_clang_complete_for_project $1 $2
       ;;
     prepare_dev|dev)
       __prepare_dev $@

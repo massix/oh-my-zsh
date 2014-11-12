@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-local tdl_command=$(which hali)
+local tdl_command=$(which lali)
 local tdl_db=${HOME}/Dropbox/todo.bin
 
 local tdl_personal_db=${HOME}/Dropbox/hali-lists/personal.bin

@@ -145,6 +145,58 @@ function __generate_clang_tags_for_project()
   naughty_notifier "Tags for ${BRANCH_NAME}:${component_name} created successfully"
 }
 
+## Use the clang_tags binary to create clang tags
+function __generate_clang_complete_for_project()
+{
+  local start_dir=$(pwd)
+  local release_dir clang_tags_bin escaped_folder make_ext
+  local bear_bin
+
+  local first_level=''
+  local second_level=''
+  local incremental_build=0
+
+
+  if test "x$1" = "x" -o "x${PROJECT_ROOT}" = "x"; then
+    echo "Missing project name (did you bootstrap_component the project?)"
+    return
+  fi
+
+  if test -d "${PROJECT_ROOT}/$1" -a -e "${PROJECT_ROOT}/$1/Makefile.am"; then
+    if test -d "${PROJECT_ROOT}/$1/tests/unit" -a "x$2" != "xnocheck"; then
+      echo "Compiling unitary tests"
+      local make_ext="check"
+    fi
+  else
+    echo "Project ${PROJECT_ROOT}/$1 doesn't exist (Makefile.am missing or directory doesn't exist)"
+    return
+  fi
+
+  # Strip folders until we don't fall in the right one
+  first_level=$(dirname ${PROJECT_ROOT}/$1)
+  if [[ "${first_level}" != "${PROJECT_ROOT}" ]]; then
+    second_level=$(dirname $first_level)
+  fi
+
+  local release_dir=${first_level}/.release/
+  local component_name=$(basename $1)
+  cd ${release_dir}
+
+  if [[ "x${second_level}" != "x" ]]; then
+    cd ${component_name}
+  fi
+
+  [[ ${incremental_build} -eq 0 ]] && make clean
+  make CXX="~/.emacs.d/cc_args.py $(which colorg++)" ${make_ext}
+
+  # Generate and copy the files
+
+  cd ${start_dir}
+  naughty_notifier "Clang_complete for ${BRANCH_NAME}:${component_name} created successfully"
+
+}
+
+
 ## Prepare a development environment
 function __prepare_dev()
 {

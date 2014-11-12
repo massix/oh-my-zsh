@@ -21,6 +21,7 @@ function _ke_project_manager()
         {proj,p}':Switch to given project'
         {bootstrap,bs}':Bootstrap current folder'
         {ctags,ct}':Generate clang tags for given component'
+        {clang,cc}':Generate clang complete for given component'
         {prepare_dev,pd}':Preparate development environment'
         {clean_branch,cb}':Give commands to clean a branch'
         {create_bundles,bun}':Create bundles for given repos'
@@ -50,7 +51,7 @@ function _ke_project_manager()
         bootstrap|bs)
           _arguments '2:branch name:(${BRANCH_NAME})'
         ;;
-        ctags|ct)
+        ctags|ct|cc|clang)
           _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
         ;;
         prepare_dev|pd)
