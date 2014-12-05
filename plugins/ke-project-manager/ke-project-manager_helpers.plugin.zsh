@@ -369,6 +369,9 @@ function __deploy_component()
   machines_array=$1
   shift
 
+  remote_path=$1
+  shift
+
   binaries=()
   binaries_basename=()
 
@@ -378,13 +381,13 @@ function __deploy_component()
   done
 
   for m in ${(P)${machines_array}}; do
-    echo "Targetting machine $fg_bold[blue]${m}$reset_color"
+    echo "Targetting machine $fg_bold[blue]${m}:${remote_path}$reset_color"
     local i=1
     for b in ${binaries}; do
       echo -n "  Deploying ${(r:70:: :)${b[1,70]}} "
-      cat $b | ssh $m "cat - > /ke/bin/${binaries_basename[$i]}"
+      cat $b | ssh $m "cat - > ${remote_path}/${binaries_basename[$i]}"
       local md5sum_local=$(md5sum $b | awk '{print $1}')
-      local md5sum_remote=$(ssh $m "md5sum /ke/bin/${binaries_basename[$i]}" | awk '{print $1}')
+      local md5sum_remote=$(ssh $m "md5sum ${remote_path}/${binaries_basename[$i]}" | awk '{print $1}')
 
       if [[ $md5sum_local != $md5sum_remote ]]; then
         echo "[$fg_bold[red]KO$reset_color]"
