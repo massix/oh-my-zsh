@@ -37,9 +37,10 @@ merger_search_preprod=(merger001.search.preprod.gen01.ke.p.fti.net \
 atlas_search_preprod=(atlas-connector001.tr01.search.preprod.bloc01.ke.p.fti.net \
                       atlas-connector002.tr01.search.preprod.bloc01.ke.p.fti.net \
                       atlas-connector003.tr01.search.preprod.bloc01.ke.p.fti.net)
+sto_crawl_qualif=(sto004.crawl.vqualif.gen01.ke.p.fti.net)
 
 # Update this to match the arrays you want to use
-machines=(atlas_conso_qualif indexer_conso_qualif thalie_search_preprod merger_search_preprod atlas_search_preprod)
+machines=(atlas_conso_qualif indexer_conso_qualif thalie_search_preprod merger_search_preprod atlas_search_preprod sto_crawl_qualif)
 
 # Load the functions file
 source $(dirname $0)/ke-project-manager_helpers.plugin.zsh
