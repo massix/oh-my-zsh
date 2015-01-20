@@ -65,6 +65,7 @@ function __kpm_usage()
   echo "   ct | ctags <project> [nochecks]                      Generate clang-tags for project"
   echo "   cc | clang <project> [nochecks]                      Generate clang-complete for project"
   echo "  dev | prepare_dev <branch-name> [repos]               Prepare development environment"
+  echo "   br | branch <repos>                                  Branch multiple repositories (not upstream)"
   echo "   cb | clean_branch <branch-name> [repos]              Clean a given branch (gives commands)"
   echo "  bun | create_bundles [repos]                          Create bundles for given repos"
   echo "    r | root                                            Go to project's root"
@@ -139,6 +140,9 @@ function ke_project_manager()
       local machines_array=$1
       shift
       __deploy_component $machines_array $@
+      ;;
+    br|branch)
+      __branch_repositories $@
       ;;
   esac
 }

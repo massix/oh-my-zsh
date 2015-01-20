@@ -71,6 +71,26 @@ function __bootstrap_component()
   naughty_notifier "Bootstrapped ${BRANCH_NAME}:${parent}"
 }
 
+
+# Helper for __branch_repositories
+function __branch_single_repository()
+{
+  echo "Branching $1"
+  bzr branch -q mel:$1 $(echo $1 | cut -d '/' -f 1)
+  echo "Finished branching $1"
+}
+
+function __branch_repositories()
+{
+  for repo in $*; do
+    __branch_single_repository $repo & workers+=($!)
+  done
+
+  for pid in ${workers}; do
+    wait $pid 2> /dev/null
+  done
+}
+
 ## Use the clang_tags binary to create clang tags
 function __generate_clang_tags_for_project()
 {

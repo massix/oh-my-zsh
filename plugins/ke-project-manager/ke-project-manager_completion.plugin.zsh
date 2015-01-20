@@ -23,6 +23,7 @@ function _ke_project_manager()
         {ctags,ct}':Generate clang tags for given component'
         {clang,cc}':Generate clang complete for given component'
         {prepare_dev,pd}':Preparate development environment'
+        {branch,br}':Branch repositories (not upstream)'
         {clean_branch,cb}':Give commands to clean a branch'
         {create_bundles,bun}':Create bundles for given repos'
         {root,r}':Goes to project root'
@@ -62,12 +63,15 @@ function _ke_project_manager()
         ;;
         create_bundles|bun)
             _arguments '*:repos:_files -W ${PROJECT_ROOT} -/'
-          ;;
+        ;;
         subproject|sp)
             _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
         ;;
         diff|d)
           _arguments '2:color:(color)'
+        ;;
+        branch|br)
+          _arguments '*:known repositories:(ke-indexation ke-crawl ke-search ke-common ke-kemake ke-opinel)'
         ;;
         compile|cc)
           _arguments '2:subproject:_files -W ${PROJECT_ROOT}/ -/'
@@ -77,7 +81,7 @@ function _ke_project_manager()
         ;;
         atlas|ats|indexer|idx)
           _arguments '2:binary:_files'
-          ;;
+        ;;
       esac
     ;;
     args)
@@ -94,6 +98,9 @@ function _ke_project_manager()
       ctags|ct)
         _arguments '*:enable checks:(check nocheck)'
         ;;
+      branch|br)
+        _arguments '*:known repositories:(ke-indexation ke-crawl ke-search ke-common ke-kemake ke-opinel)'
+      ;;
       esac
     ;;
   esac
