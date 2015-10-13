@@ -82,6 +82,9 @@ function __branch_single_repository()
 
 function __branch_repositories()
 {
+  # Avoid printing the jobs status
+  unsetopt MONITOR
+
   for repo in $*; do
     __branch_single_repository $repo & workers+=($!)
   done
@@ -89,6 +92,9 @@ function __branch_repositories()
   for pid in ${workers}; do
     wait $pid 2> /dev/null
   done
+
+  # Reset the default option
+  setopt MONITOR
 }
 
 ## Use the clang_tags binary to create clang tags
